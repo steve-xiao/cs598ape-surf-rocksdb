@@ -1,3 +1,5 @@
+> **Historical notes from Oct 14 2026.** The integration described in section 5 is now implemented; see [`../SURF_PROJECT.md`](../SURF_PROJECT.md) for current instructions.
+
 # Project setup: SuRF in RocksDB
 
 Everything here was run and verified on Ubuntu 24.04 (2 cores, 8 GB RAM) on

@@ -21,10 +21,8 @@ public:
 				 trie_(trie),
 				 send_out_node_num_(0), key_len_(0),
 				 is_at_prefix_key_(false) {
-	    for (level_t level = 0; level < trie_->getHeight(); level++) {
-		key_.push_back(0);
-		pos_in_trie_.push_back(0);
-	    }
+	    key_.assign(trie_->getHeight(), 0);
+	    pos_in_trie_.assign(trie_->getHeight(), 0);
 	}
 
 	void clear();
@@ -131,10 +129,15 @@ public:
     }
 
     void destroy() {
+	delete[] level_cuts_;
 	label_bitmaps_->destroy();
 	child_indicator_bitmaps_->destroy();
 	prefixkey_indicator_bits_->destroy();
 	suffixes_->destroy();
+	delete label_bitmaps_;
+	delete child_indicator_bitmaps_;
+	delete prefixkey_indicator_bits_;
+	delete suffixes_;
     }
 
 private:

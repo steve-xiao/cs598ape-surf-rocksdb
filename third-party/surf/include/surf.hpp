@@ -16,11 +16,10 @@ public:
     class Iter {
     public:
 	Iter() {};
-	Iter(const SuRF* filter) {
-	    dense_iter_ = LoudsDense::Iter(filter->louds_dense_);
-	    sparse_iter_ = LoudsSparse::Iter(filter->louds_sparse_);
-	    could_be_fp_ = false;
-	}
+	Iter(const SuRF* filter)
+	    : dense_iter_(filter->louds_dense_),
+	      sparse_iter_(filter->louds_sparse_),
+	      could_be_fp_(false) {}
 
 	void clear();
 	bool isValid() const;
@@ -85,6 +84,8 @@ public:
     SuRF::Iter moveToKeyLessThan(const std::string& key, const bool inclusive) const;
     SuRF::Iter moveToFirst() const;
     SuRF::Iter moveToLast() const;
+    // Thread-safe check for any key in [left_key, right_key).
+    bool mayContainRange(const std::string& left_key, const std::string& right_key) const;
     bool lookupRange(const std::string& left_key, const bool left_inclusive, 
 		     const std::string& right_key, const bool right_inclusive);
     // Accurate except at the boundaries --> undercount by at most 2
@@ -98,7 +99,7 @@ public:
 
     char* serialize() const {
 	uint64_t size = serializedSize();
-	char* data = new char[size];
+	char* data = new char[size]();
 	char* cur_data = data;
 	louds_dense_->serialize(cur_data);
 	louds_sparse_->serialize(cur_data);
@@ -117,6 +118,10 @@ public:
     void destroy() {
 	louds_dense_->destroy();
 	louds_sparse_->destroy();
+	delete louds_dense_;
+	delete louds_sparse_;
+	louds_dense_ = nullptr;
+	louds_sparse_ = nullptr;
     }
 
 private:
@@ -218,6 +223,14 @@ SuRF::Iter SuRF::moveToLast() const {
 	iter.sparse_iter_.moveToRightMostKey();
     }
     return iter;
+}
+
+bool SuRF::mayContainRange(const std::string& left_key, const std::string& right_key) const {
+    SuRF::Iter iter = moveToKeyGreaterThan(left_key, true);
+    if (!iter.isValid()) return false;
+    int compare = iter.compare(right_key);
+    if (compare == kCouldBePositive) return true;
+    return compare < 0;
 }
 
 bool SuRF::lookupRange(const std::string& left_key, const bool left_inclusive, 

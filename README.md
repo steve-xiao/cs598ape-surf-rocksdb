@@ -1,3 +1,6 @@
+> **CS598 APE project:** this fork adds SuRF range filters to RocksDB. See
+> [SURF_PROJECT.md](SURF_PROJECT.md) for build, test and benchmark instructions.
+
 ## RocksDB: A Persistent Key-Value Store for Flash and RAM Storage
 
 [![CircleCI Status](https://circleci.com/gh/facebook/rocksdb.svg?style=svg)](https://circleci.com/gh/facebook/rocksdb)

@@ -52,6 +52,8 @@ class BlockBasedTableIterator : public InternalIteratorBase<Slice> {
 
   ~BlockBasedTableIterator() override { ClearBlockHandles(); }
 
+  void SetCheckRangeFilter(bool v) { check_range_filter_ = v; }
+
   void Seek(const Slice& target) override;
   void SeekForPrev(const Slice& target) override;
   void SeekToFirst() override;
@@ -352,6 +354,7 @@ class BlockBasedTableIterator : public InternalIteratorBase<Slice> {
   // that block yet. A call to PrepareValue() will trigger loading the block.
   bool is_at_first_key_from_index_ = false;
   bool check_filter_;
+  bool check_range_filter_ = false;
   // TODO(Zhongyi): pick a better name
   bool need_upper_bound_check_;
 

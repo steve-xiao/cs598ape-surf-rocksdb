@@ -208,6 +208,17 @@ class FilterBlockReader {
   virtual void EraseFromCacheBeforeDestruction(
       uint32_t /*uncache_aggressiveness*/) {}
 
+  // Range filter check on user keys [lo, hi_exclusive). Readers without
+  // range support return true and leave *filter_checked false.
+  virtual bool UserKeyRangeMayMatch(const Slice& /*lo*/,
+                                    const Slice& /*hi_exclusive*/,
+                                    bool* filter_checked,
+                                    BlockCacheLookupContext* /*lookup_context*/,
+                                    const ReadOptions& /*read_options*/) {
+    *filter_checked = false;
+    return true;
+  }
+
   virtual bool RangeMayExist(const Slice* /*iterate_upper_bound*/,
                              const Slice& user_key_without_ts,
                              const SliceTransform* prefix_extractor,

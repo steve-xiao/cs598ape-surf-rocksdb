@@ -295,6 +295,10 @@ void SuRFBuilder::insertKeyByte(const char c, const level_t level, const bool is
 
 inline void SuRFBuilder::storeSuffix(const level_t level, const word_t suffix) {
     level_t suffix_len = getSuffixLen();
+    if (suffix_len == 0) {
+	suffix_counts_[level-1]++;
+	return;
+    }
     position_t pos = suffix_counts_[level-1] * suffix_len;
     assert(pos <= (suffixes_[level-1].size() * kWordSize));
     if (pos == (suffixes_[level-1].size() * kWordSize))

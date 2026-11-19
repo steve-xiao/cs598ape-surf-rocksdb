@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <vector>
@@ -106,6 +107,20 @@ class FullFilterBlockReader
                    BlockCacheLookupContext* lookup_context,
                    const ReadOptions& read_options) override;
 
+  bool UserKeyRangeMayMatch(const Slice& lo, const Slice& hi_exclusive,
+                            bool* filter_checked,
+                            BlockCacheLookupContext* lookup_context,
+                            const ReadOptions& read_options) override;
+
+  // Adaptive range checks: after kRangeWarmup checks, if fewer than
+  // 1/kRangeMinUsefulInv of them ruled the file out, only every
+  // kRangeSampleEvery-th seek is checked. Counts decay by half every
+  // kRangeWindow checks so the reader adapts to workload changes.
+  static constexpr uint32_t kRangeWarmup = 64;
+  static constexpr uint32_t kRangeMinUsefulInv = 8;
+  static constexpr uint32_t kRangeSampleEvery = 16;
+  static constexpr uint32_t kRangeWindow = 4096;
+
   bool PrefixMayMatch(const Slice& prefix, const Slice* const const_ikey_ptr,
                       GetContext* get_context,
                       BlockCacheLookupContext* lookup_context,
@@ -129,6 +144,10 @@ class FullFilterBlockReader
   size_t ApproximateMemoryUsage() const override;
 
  private:
+  std::atomic<uint32_t> range_checks_{0};
+  std::atomic<uint32_t> range_skips_{0};
+  std::atomic<uint32_t> range_tick_{0};
+
   bool MayMatch(const Slice& entry, GetContext* get_context,
                 BlockCacheLookupContext* lookup_context,
                 const ReadOptions& read_options) const;

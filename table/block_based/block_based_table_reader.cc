@@ -44,6 +44,7 @@
 #include "rocksdb/env.h"
 #include "rocksdb/file_system.h"
 #include "rocksdb/filter_policy.h"
+#include "table/block_based/surf_filter_policy.h"
 #include "rocksdb/iterator.h"
 #include "rocksdb/options.h"
 #include "rocksdb/snapshot.h"
@@ -2544,6 +2545,30 @@ bool BlockBasedTable::PrefixRangeMayMatch(
   return may_match;
 }
 
+bool BlockBasedTable::RangeFilterApplicable() const {
+  const Comparator* ucmp = rep_->internal_comparator.user_comparator();
+  return rep_->filter != nullptr && IsSurfFilterPolicy(rep_->filter_policy) &&
+         rep_->whole_key_filtering && rep_->table_prefix_extractor == nullptr &&
+         ucmp->timestamp_size() == 0 &&
+         ucmp->GetId() == BytewiseComparator()->GetId();
+}
+
+bool BlockBasedTable::UserKeyRangeMayMatch(
+    const Slice& internal_key, const ReadOptions& read_options,
+    BlockCacheLookupContext* lookup_context, bool* filter_checked) const {
+  *filter_checked = false;
+  const Slice* ub = read_options.iterate_upper_bound;
+  if (ub == nullptr) {
+    return true;
+  }
+  const Slice lo = ExtractUserKey(internal_key);
+  if (lo.compare(*ub) >= 0) {
+    return true;
+  }
+  return rep_->filter->UserKeyRangeMayMatch(lo, *ub, filter_checked,
+                                            lookup_context, read_options);
+}
+
 bool BlockBasedTable::PrefixExtractorChanged(
     const SliceTransform* prefix_extractor) const {
   if (prefix_extractor == nullptr) {
@@ -2591,11 +2616,13 @@ InternalIterator* BlockBasedTable::NewIterator(
   const bool inner_allow_unprepared_value =
       allow_unprepared_value && !resolve_embedded_values;
 
+  const bool check_range_filter = !skip_filters && RangeFilterApplicable();
   if (arena == nullptr) {
     auto* iter = new BlockBasedTableIterator(
         this, read_options, rep_->internal_comparator, std::move(index_iter),
         check_filter, need_upper_bound_check, prefix_extractor, caller,
         compaction_readahead_size, inner_allow_unprepared_value);
+    iter->SetCheckRangeFilter(check_range_filter);
     if (!resolve_embedded_values) {
       return iter;
     }
@@ -2611,6 +2638,7 @@ InternalIterator* BlockBasedTable::NewIterator(
         this, read_options, rep_->internal_comparator, std::move(index_iter),
         check_filter, need_upper_bound_check, prefix_extractor, caller,
         compaction_readahead_size, inner_allow_unprepared_value);
+    iter->SetCheckRangeFilter(check_range_filter);
     if (!resolve_embedded_values) {
       return iter;
     }

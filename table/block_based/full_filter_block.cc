@@ -166,6 +166,48 @@ bool FullFilterBlockReader::MayMatch(const Slice& entry,
   return true;
 }
 
+bool FullFilterBlockReader::UserKeyRangeMayMatch(
+    const Slice& lo, const Slice& hi_exclusive, bool* filter_checked,
+    BlockCacheLookupContext* lookup_context, const ReadOptions& read_options) {
+  *filter_checked = false;
+  const uint32_t checks = range_checks_.load(std::memory_order_relaxed);
+  const uint32_t skips = range_skips_.load(std::memory_order_relaxed);
+  if (checks >= kRangeWarmup && skips * kRangeMinUsefulInv < checks &&
+      range_tick_.fetch_add(1, std::memory_order_relaxed) % kRangeSampleEvery !=
+          0) {
+    return true;
+  }
+  CachableEntry<ParsedFullFilterBlock> filter_block;
+  const Status s = GetOrReadFilterBlock(/*get_context=*/nullptr, lookup_context,
+                                        &filter_block, read_options);
+  if (!s.ok()) {
+    IGNORE_STATUS_IF_ERROR(s);
+    return true;
+  }
+  assert(filter_block.GetValue());
+  FilterBitsReader* const filter_bits_reader =
+      filter_block.GetValue()->filter_bits_reader();
+  if (filter_bits_reader == nullptr) {
+    return true;
+  }
+  bool supported = false;
+  const bool may_match =
+      filter_bits_reader->RangeMayMatch(lo, hi_exclusive, &supported);
+  *filter_checked = supported;
+  if (supported) {
+    if (!may_match) {
+      range_skips_.fetch_add(1, std::memory_order_relaxed);
+    }
+    if (range_checks_.fetch_add(1, std::memory_order_relaxed) + 1 >=
+        kRangeWindow) {
+      range_checks_.store(kRangeWindow / 2, std::memory_order_relaxed);
+      range_skips_.store(range_skips_.load(std::memory_order_relaxed) / 2,
+                         std::memory_order_relaxed);
+    }
+  }
+  return may_match || !supported;
+}
+
 void FullFilterBlockReader::KeysMayMatch(
     MultiGetRange* range, BlockCacheLookupContext* lookup_context,
     const ReadOptions& read_options) {

@@ -162,7 +162,8 @@ void Bitvector::concatenateBitvectors(const std::vector<std::vector<word_t> >& b
 		bit_shift += bits_remain;
 	    } else {
 		word_id++;
-		bits_[word_id] |= (last_word << (kWordSize - bit_shift));
+		if (bit_shift + bits_remain > kWordSize)
+		    bits_[word_id] |= (last_word << (kWordSize - bit_shift));
 		bit_shift = bit_shift + bits_remain - kWordSize;
 	    }
 	}

@@ -120,6 +120,14 @@ class FilterBitsReader {
       may_match[i] = MayMatch(*keys[i]);
     }
   }
+
+  // Could any key in [lo, hi_exclusive) be in the filter? Filters that cannot
+  // answer range queries set *supported = false and return true.
+  virtual bool RangeMayMatch(const Slice& /*lo*/, const Slice& /*hi_exclusive*/,
+                             bool* supported) {
+    *supported = false;
+    return true;
+  }
 };
 
 // Base class for RocksDB built-in filter reader with

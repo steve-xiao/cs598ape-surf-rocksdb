@@ -2,3 +2,6 @@ SuRF/
 surf_harness
 results/
 __pycache__/
+surf_harness_debug
+rocksdb_filter_test
+dbbench/results/

@@ -97,6 +97,25 @@ void BlockBasedTableIterator::SeekImpl(const Slice* target,
                                             : NON_LAST_LEVEL_SEEK_FILTER_MATCH);
   }
 
+  if (target && check_range_filter_ && !filter_checked) {
+    bool range_checked = false;
+    if (!table_->UserKeyRangeMayMatch(*target, read_options_, &lookup_context_,
+                                      &range_checked)) {
+      ResetDataIter();
+      is_out_of_bound_ = true;
+      RecordTick(table_->GetStatistics(), is_last_level_
+                                              ? LAST_LEVEL_SEEK_FILTERED
+                                              : NON_LAST_LEVEL_SEEK_FILTERED);
+      return;
+    }
+    if (range_checked) {
+      seek_stat_state_ = kFilterUsed;
+      RecordTick(table_->GetStatistics(),
+                 is_last_level_ ? LAST_LEVEL_SEEK_FILTER_MATCH
+                                : NON_LAST_LEVEL_SEEK_FILTER_MATCH);
+    }
+  }
+
   bool need_seek_index = true;
 
   //  In case of readahead_cache_lookup_, index_iter_ could change to find the

@@ -177,6 +177,18 @@ class BlockBasedTable : public TableReader, public SameFileBlobReader {
       bool avoid_shared_metadata_cache = false,
       BlobSource* blob_source = nullptr);
 
+  // True if seeks with iterate_upper_bound can consult this table's filter
+  // as a range filter (SuRF on whole bytewise user keys).
+  bool RangeFilterApplicable() const;
+
+  // Range filter check for a forward seek to internal_key with
+  // read_options.iterate_upper_bound. Returns false only if the table has no
+  // user key in [user_key(internal_key), iterate_upper_bound).
+  bool UserKeyRangeMayMatch(const Slice& internal_key,
+                            const ReadOptions& read_options,
+                            BlockCacheLookupContext* lookup_context,
+                            bool* filter_checked) const;
+
   bool PrefixRangeMayMatch(const Slice& internal_key,
                            const ReadOptions& read_options,
                            const SliceTransform* options_prefix_extractor,

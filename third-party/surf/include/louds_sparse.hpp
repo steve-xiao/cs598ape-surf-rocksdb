@@ -20,10 +20,8 @@ public:
 	Iter(LoudsSparse* trie) : is_valid_(false), trie_(trie), start_node_num_(0), 
 				  key_len_(0), is_at_terminator_(false) {
 	    start_level_ = trie_->getStartLevel();
-	    for (level_t level = start_level_; level < trie_->getHeight(); level++) {
-		key_.push_back(0);
-		pos_in_trie_.push_back(0);
-	    }
+	    key_.assign(trie_->getHeight() - start_level_, 0);
+	    pos_in_trie_.assign(trie_->getHeight() - start_level_, 0);
 	}
 
 	void clear();
@@ -132,6 +130,10 @@ public:
 	child_indicator_bits_->destroy();
 	louds_bits_->destroy();
 	suffixes_->destroy();
+	delete labels_;
+	delete child_indicator_bits_;
+	delete louds_bits_;
+	delete suffixes_;
     }
 
 private:

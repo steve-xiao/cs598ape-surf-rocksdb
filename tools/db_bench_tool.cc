@@ -55,6 +55,7 @@
 #include "rocksdb/db.h"
 #include "rocksdb/env.h"
 #include "rocksdb/filter_policy.h"
+#include "table/block_based/surf_filter_policy.h"
 #include "rocksdb/io_dispatcher.h"
 #include "rocksdb/io_status.h"
 #include "rocksdb/memtablerep.h"
@@ -852,6 +853,13 @@ DEFINE_int32(bloom_bits, -1,
              "Zero disables.");
 
 DEFINE_bool(use_ribbon_filter, false, "Use Ribbon instead of Bloom filter");
+
+DEFINE_bool(use_surf_filter, false,
+            "Use a SuRF range filter instead of Bloom/Ribbon (ignores "
+            "--bloom_bits). Bounded seeks (--max_scan_distance) consult it.");
+
+DEFINE_string(surf_suffix, "none",
+              "SuRF suffix: none, realN or hashN (N = suffix bits, e.g. real8)");
 
 DEFINE_double(memtable_bloom_size_ratio, 0,
               "Ratio of memtable size used for bloom filter. 0 means no bloom "
@@ -5788,7 +5796,15 @@ class Benchmark {
         table_options->block_cache = cache_;
       }
       if (table_options->filter_policy == nullptr) {
-        if (FLAGS_bloom_bits < 0) {
+        if (FLAGS_use_surf_filter) {
+          const FilterPolicy* surf = NewSurfFilterPolicy(FLAGS_surf_suffix);
+          if (surf == nullptr) {
+            fprintf(stderr, "Invalid --surf_suffix: %s\n",
+                    FLAGS_surf_suffix.c_str());
+            exit(1);
+          }
+          table_options->filter_policy.reset(surf);
+        } else if (FLAGS_bloom_bits < 0) {
           table_options->filter_policy = BlockBasedTableOptions().filter_policy;
         } else if (FLAGS_bloom_bits == 0) {
           table_options->filter_policy.reset();
