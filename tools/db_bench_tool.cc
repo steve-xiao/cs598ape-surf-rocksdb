@@ -854,6 +854,10 @@ DEFINE_int32(bloom_bits, -1,
 
 DEFINE_bool(use_ribbon_filter, false, "Use Ribbon instead of Bloom filter");
 
+DEFINE_int32(ribbon_bloom_before_level, 0,
+             "bloom_before_level for --use_ribbon_filter. The default 0 builds "
+             "Bloom filters for flushes; -1 builds Ribbon filters everywhere.");
+
 DEFINE_bool(use_surf_filter, false,
             "Use a SuRF range filter instead of Bloom/Ribbon (ignores "
             "--bloom_bits). Bounded seeks (--max_scan_distance) consult it.");
@@ -5810,8 +5814,10 @@ class Benchmark {
           table_options->filter_policy.reset();
         } else {
           table_options->filter_policy.reset(
-              FLAGS_use_ribbon_filter ? NewRibbonFilterPolicy(FLAGS_bloom_bits)
-                                      : NewBloomFilterPolicy(FLAGS_bloom_bits));
+              FLAGS_use_ribbon_filter
+                  ? NewRibbonFilterPolicy(FLAGS_bloom_bits,
+                                          FLAGS_ribbon_bloom_before_level)
+                  : NewBloomFilterPolicy(FLAGS_bloom_bits));
         }
       }
     }

@@ -101,7 +101,7 @@ for ax, wl, title in [(axs[0], "readrandom", "random absent keys"),
         ax.scatter([pts[f][0]], [pts[f][1]], s=22, color=COLORS[f], zorder=3,
                    edgecolor="white", linewidth=0.5)
     labels = {f: NAMES[f] for f in fs}
-    if "bloom" in pts and "ribbon" in pts:
+    if "bloom" in pts and "ribbon" in pts and abs(pts["bloom"][0] - pts["ribbon"][0]) < 1:
         labels["bloom"], labels["ribbon"] = "Bloom, Ribbon", None
     for f in fs:
         if labels[f] is None:
@@ -111,12 +111,15 @@ for ax, wl, title in [(axs[0], "readrandom", "random absent keys"),
             dy = 6
         if f == "surf-hash8" and "surf-real8" in pts and pts["surf-real8"][1] < pts[f][1] * 1.6:
             dy = -9
-        ax.annotate(labels[f], pts[f], xytext=(4, dy), textcoords="offset points",
+        dx = 4
+        if f == "ribbon" and labels.get("bloom"):
+            dx, dy = -2, -11
+        ax.annotate(labels[f], pts[f], xytext=(dx, dy), textcoords="offset points",
                     fontsize=6)
     ax.set_yscale("log")
     ax.set_title(title, fontsize=7.5)
     ax.set_xlabel("filter bits / key")
-    ax.set_xlim(6, 24)
+    ax.set_xlim(5, 24)
     ax.grid(color="#e6e5e0", linewidth=0.5)
     ax.set_axisbelow(True)
 axs[0].set_ylabel("false positives per probe (%)")

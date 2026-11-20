@@ -41,7 +41,7 @@ filter_flags() {
   case "$1" in
     nofilter)   echo "--bloom_bits=0" ;;
     bloom)      echo "--bloom_bits=$BITS" ;;
-    ribbon)     echo "--bloom_bits=$BITS --use_ribbon_filter=true" ;;
+    ribbon)     echo "--bloom_bits=$BITS --use_ribbon_filter=true --ribbon_bloom_before_level=-1" ;;
     surf-base)  echo "--use_surf_filter=true --surf_suffix=none" ;;
     surf-real8) echo "--use_surf_filter=true --surf_suffix=real8" ;;
     surf-hash8) echo "--use_surf_filter=true --surf_suffix=hash8" ;;

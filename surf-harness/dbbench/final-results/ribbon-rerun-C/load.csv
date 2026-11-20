@@ -1,0 +1,3 @@
+filter,fill_us_per_op,load_seconds,peak_rss_mb,sst_files,entries,filter_bytes,data_bytes,filter_bits_per_key
+bloom,0.788,5.8,27,36,998662,1249716,121766342,10.01
+ribbon,0.990,6.1,28,36,998664,872228,121766479,6.99

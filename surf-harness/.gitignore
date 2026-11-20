@@ -5,3 +5,5 @@ __pycache__/
 surf_harness_debug
 rocksdb_filter_test
 dbbench/results/
+examples/trie_example
+examples/seek_example

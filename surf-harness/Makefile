@@ -23,6 +23,15 @@ rocksdb_filter_test: rocksdb_filter_test.cc $(ROCKSDB_ROOT)/librocksdb.a
 	$(CXX) -O2 -g -std=c++20 -fno-rtti -I$(ROCKSDB_ROOT) -I$(ROCKSDB_ROOT)/include $< \
 	  $(ROCKSDB_ROOT)/librocksdb.a $(ROCKSDB_LIBS) -o $@
 
+examples/trie_example: examples/trie_example.cpp $(wildcard $(SURF_DIR)/include/*.hpp)
+	$(CXX) -O2 -std=c++17 -mpopcnt -I$(SURF_DIR)/include $< -o $@
+
+examples/seek_example: examples/seek_example.cc $(ROCKSDB_ROOT)/librocksdb.a
+	$(CXX) -O2 -std=c++20 -fno-rtti -I$(ROCKSDB_ROOT) -I$(ROCKSDB_ROOT)/include $< \
+	  $(ROCKSDB_ROOT)/librocksdb.a $(ROCKSDB_LIBS) -o $@
+
+examples: examples/trie_example examples/seek_example
+
 test: surf_harness rocksdb_filter_test
 	./surf_harness correctness
 	./rocksdb_filter_test
@@ -31,6 +40,6 @@ valgrind-rocksdb: rocksdb_filter_test
 	valgrind --leak-check=full --error-exitcode=9 ./rocksdb_filter_test --keys 2000 --queries 2000
 
 clean:
-	rm -f surf_harness surf_harness_debug rocksdb_filter_test
+	rm -f surf_harness surf_harness_debug rocksdb_filter_test examples/trie_example examples/seek_example
 
-.PHONY: clean valgrind valgrind-rocksdb test
+.PHONY: clean valgrind valgrind-rocksdb test examples
